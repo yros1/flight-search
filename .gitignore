@@ -218,3 +218,7 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# sqlite database files created for caching or testing purposes
+sheety_prices_cache.sqlite
+fligth_search_cache.sqlite
