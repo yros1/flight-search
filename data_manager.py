@@ -3,14 +3,15 @@ import requests_cache
 import sys
 from datetime import timedelta
 
-requests_cache.install_cache('sheety_cache')
-
 class DataManager:
     # This class is responsible for talking to the Google Sheet.
     def __init__(self):
         # https://api.sheety.co/your_sheety_api_username_here/flightDeals/prices
         self.base_url = "https://api.sheety.co"
 
+    """
+    Retrieves and returns the current flight price data from the Google Sheets-backed Sheety API.
+    """
     def get_prices_data(self):
         if not os.getenv("YOUR_SHEETY_API_USERNAME"):
             print("Environment variable 'YOUR_SHEETY_API_USERNAME' is not set.")

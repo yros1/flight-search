@@ -1,0 +1,28 @@
+{
+  "search_metadata": { "id": "mock...", "status": "Success", ... },
+  "search_parameters": { "engine": "google_flights", "departure_id": "LHR", ... },
+  "airports": [ { "departure": [...], "arrival": [...] } ],
+  "best_flights": [
+    {
+      "flights": [
+        {
+          "airline": "Air France",
+          "airline_logo": "https://www.gstatic.com/flights/airline_logos/70px/AF.png",
+          "airplane": "Airbus A220-300 Passenger",
+          "departure_airport": { "id": "LHR", "name": "Heathrow Airport", "time": "2026-04-10 17:35" },
+          "arrival_airport":   { "id": "CDG", "name": "Paris Charles de Gaulle Airport", "time": "2026-04-10 18:55" },
+          "duration": 80,
+          "flight_number": "AF 1281",
+          "legroom": "30 in",
+          "travel_class": "Economy"
+        }
+      ],
+      "price": 144,
+      "total_duration": 80,
+      "type": "Round trip",
+      "carbon_emissions": { "this_flight": 29000, "typical_for_this_route": 55000, "difference_percent": -47 },
+      "departure_token": "..."
+    }
+  ],
+  "other_flights": [ ... ]
+}

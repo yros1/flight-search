@@ -1,0 +1,22 @@
+{
+   "prices":[
+      {
+         "city":"Paris",
+         "iataCode":"CDG",
+         "lowestPrice":54,
+         "id":2
+      },
+      {
+         "city":"Frankfurt",
+         "iataCode":"FRA",
+         "lowestPrice":12345,
+         "id":3
+      },
+      {
+         "city":"Tokyo",
+         "iataCode":"HND",
+         "lowestPrice":485,
+         "id":4
+      }
+   ]
+}
