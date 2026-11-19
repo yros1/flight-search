@@ -1,6 +1,7 @@
 """Find low-cost flights and send notifications for matching deals."""
 
-import logging
+import logging.config
+from pathlib import Path
 
 from dotenv import load_dotenv
 
@@ -8,10 +9,12 @@ from data_manager import DataManager
 from flight_search import FlightSearch
 from notification_manager import NotificationManager
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
-)
+logs_directory = Path(__file__).parent / "Logs"
+logs_directory.mkdir(parents=True, exist_ok=True)
+
+config_path = Path(__file__).parent / "logging.ini"
+logging.config.fileConfig(config_path, disable_existing_loggers=False)
+
 logger = logging.getLogger(__name__)
 
 logger.info("START APP")
