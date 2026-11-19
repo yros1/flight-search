@@ -1,57 +1,70 @@
 import os
-import requests_cache
-import sys
 from datetime import date, timedelta
+from pathlib import Path
 
-requests_cache.install_cache('fligth_search_cache')
+import requests_cache
+
 
 class FlightSearch:
-    # This a class responsible for talking to the Flight Search API.
+    """Search for the cheapest flight deals through the Flights API."""
+
     def __init__(self):
-        self.base_url = "https://app.100daysofpython.dev"
-    """
-    Search flights, find the cheapest option, and return the full response.
-    """
-    def get_flights_data(self, destination_city_code):
-        if not os.getenv("FLIGHTS_API_KEY"):
-            print("Environment variable 'FLIGHTS_API_KEY' is not set.")
-            sys.exit(1)
+        """Initialize the Flights API base URL."""
+        self.__base_url = "https://app.100daysofpython.dev"
 
-        endpoint = f"{self.base_url}/v1/flights/search"
+    def get_flights(self, destination_city_code):
+        """Return the cheapest flight to the given IATA city code."""
+        flight_api_key = os.getenv("FLIGHTS_API_KEY")
 
-        outbound_date = date.today().strftime("%Y-%m-%d")
-        return_date = (date.today() + timedelta(days=180)).strftime("%Y-%m-%d")
+        if not flight_api_key:
+            raise RuntimeError("Environment variable FLIGHTS_API_KEY not set")
+
+        endpoint = f"{self.__base_url}/v1/flights/search"
+
+        tomorrow = (date.today() + timedelta(days=1)).strftime("%Y-%m-%d")
+        six_month_from_today = (date.today() + timedelta(days=180)).strftime("%Y-%m-%d")
 
         parameters = {
-            "engine" : "google_flights",
-            "departure_id" : "LHR",
-            "arrival_id" : destination_city_code,
-            "outbound_date" : outbound_date,
-            "return_date" : return_date,
-            "type" : 1,
-            "adults" : 1,
-            "currency" : "GBP",
-            "stops" : 1,
-            "api_key": os.getenv("FLIGHTS_API_KEY")
+            "engine": "google_flights",
+            "departure_id": "LHR",
+            "arrival_id": destination_city_code,
+            "outbound_date": tomorrow,
+            "return_date": six_month_from_today,
+            "type": 1,
+            "adults": 1,
+            "currency": "GBP",
+            "stops": 1,
+            "api_key": flight_api_key,
         }
 
+        cache_path = Path(__file__).parent / "Cache" / "flight_search_cache"
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+
         session = requests_cache.CachedSession(
-            cache_name="fligth_search_cache",
+            cache_name=cache_path,
             backend="sqlite",
-            expire_after=timedelta(hours=12)
+            expire_after=timedelta(hours=12),
         )
 
         response = session.get(url=endpoint, params=parameters, timeout=30)
 
-        #print(f"Requesting flight data for destination city code: {destination_city_code}.")
-
+        response.raise_for_status()
         flights_data = response.json()
 
         if "error" in flights_data:
-            print("API error:", flights_data["error"])
-            exit(1)
-        else:
-            flights = flights_data.get("best_flights", []) + flights_data.get("other_flights", [])
-            cheapest = min(flights, key=lambda f: f["price"])
-            #print(f"Cheapest flight found for: {cheapest['price']} GBP")
-            return cheapest
+            raise RuntimeError(
+                f"Flight API returned error: {flights_data['error']}"
+            )
+
+        flights = (
+            flights_data.get("best_flights", [])
+            + flights_data.get("other_flights", [])
+        )
+
+        if not flights:
+            raise RuntimeError(
+                f"No flights found for destination {destination_city_code}."
+            )
+
+        cheapest = min(flights, key=lambda f: f["price"])
+        return cheapest

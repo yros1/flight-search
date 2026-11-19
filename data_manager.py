@@ -1,35 +1,43 @@
 import os
-import requests_cache
-import sys
 from datetime import timedelta
+from pathlib import Path
+
+import requests
+import requests_cache
+
 
 class DataManager:
-    # This class is responsible for talking to the Google Sheet.
+    """Retrieve and update flight prices using the Sheety API."""
+
     def __init__(self):
-        # https://api.sheety.co/your_sheety_api_username_here/flightDeals/prices
-        self.base_url = "https://api.sheety.co"
+        """Initialize the API credentials and Sheety base URL."""
+        self.__base_url = "https://api.sheety.co"
+        self.__username = os.getenv("YOUR_SHEETY_API_USERNAME")
+        self.__authentication_bearer_token = os.getenv(
+            "YOUR_SHEETY_API_AUTHENTICATION_BEARER_TOKEN"
+        )
 
-    """
-    Retrieves and returns the current flight price data from the Google Sheets-backed Sheety API.
-    """
+        if not self.__username:
+            raise RuntimeError("Environment variable YOUR_SHEETY_API_USERNAME is not set")
+
+        if not self.__authentication_bearer_token:
+            raise RuntimeError("Environment variable 'YOUR_SHEETY_API_AUTHENTICATION_BEARER_TOKEN' is not set.")
+
     def get_prices_data(self):
-        if not os.getenv("YOUR_SHEETY_API_USERNAME"):
-            print("Environment variable 'YOUR_SHEETY_API_USERNAME' is not set.")
-            sys.exit(1)
-        if not os.getenv("YOUR_SHEETY_API_AUTHENTICATION_BEARER_TOKEN"):
-            print("Environment variable 'YOUR_SHEETY_API_AUTHENTICATION_BEARER_TOKEN' is not set.")
-            sys.exit(1)
-
-        endpoint = f"{self.base_url}/{os.getenv('YOUR_SHEETY_API_USERNAME')}/flightDeals/prices"
+        """Retrieve destination and lowest-price data from the Google Sheet."""
+        endpoint = f"{self.__base_url}/{self.__username}/flightDeals/prices"
 
         headers = {
             "Content-Type": "application/json",
-            "Authorization": f"{os.getenv('YOUR_SHEETY_API_AUTHENTICATION_BEARER_TOKEN')}"
+            "Authorization": f"{self.__authentication_bearer_token}",
         }
 
+        cache_path = Path(__file__).parent / "Cache" / "sheety_prices_cache"
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+
         session = requests_cache.CachedSession(
-            cache_name="sheety_prices_cache",
-            backend='sqlite',
+            cache_name=cache_path,
+            backend="sqlite",
             expire_after=timedelta(hours=12),
         )
 
@@ -39,4 +47,27 @@ class DataManager:
         prices_data = response.json()
 
         return prices_data
-    pass
+
+    def update_lowest_price(self, row_id, new_lowest_price):
+        """Update the lowest price for one row in the Google Sheet."""
+        body = {
+            "price": {
+                "lowestPrice": new_lowest_price,
+            },
+        }
+
+        endpoint = f"{self.__base_url}/{self.__username}/flightDeals/prices/{row_id}"
+
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"{self.__authentication_bearer_token}",
+        }
+
+        response = requests.put(
+            url=endpoint,
+            json=body,
+            timeout=5,
+            headers=headers,
+        )
+
+        response.raise_for_status()
