@@ -221,4 +221,4 @@ __marimo__/
 
 # sqlite database files created for caching or testing purposes
 sheety_prices_cache.sqlite
-fligth_search_cache.sqlite
+flight_search_cache.sqlite
