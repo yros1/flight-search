@@ -1,8 +1,11 @@
+import logging
 import os
 from datetime import date, timedelta
 from pathlib import Path
 
 import requests_cache
+
+logger = logging.getLogger(__name__)
 
 
 class FlightSearch:
@@ -17,6 +20,7 @@ class FlightSearch:
         flight_api_key = os.getenv("FLIGHTS_API_KEY")
 
         if not flight_api_key:
+            logger.error("FLIGHTS_API_KEY environment variable is not set")
             raise RuntimeError("Environment variable FLIGHTS_API_KEY not set")
 
         endpoint = f"{self.__base_url}/v1/flights/search"
@@ -46,14 +50,17 @@ class FlightSearch:
             expire_after=timedelta(hours=12),
         )
 
+        logger.info("Searching flights to %s", destination_city_code)
         response = session.get(url=endpoint, params=parameters, timeout=30)
 
         response.raise_for_status()
         flights_data = response.json()
 
         if "error" in flights_data:
+            error_message = flights_data["error"]
+            logger.error("Flight API returned an error: %s", error_message)
             raise RuntimeError(
-                f"Flight API returned error: {flights_data['error']}"
+                f"Flight API returned error: {error_message}"
             )
 
         flights = (
@@ -62,9 +69,11 @@ class FlightSearch:
         )
 
         if not flights:
+            logger.warning("No flights found for %s", destination_city_code)
             raise RuntimeError(
                 f"No flights found for destination {destination_city_code}."
             )
 
-        cheapest = min(flights, key=lambda f: f["price"])
+        cheapest = min(flights, key=lambda flight: float(flight["price"]))
+        logger.info("Found cheapest flight to %s", destination_city_code)
         return cheapest
